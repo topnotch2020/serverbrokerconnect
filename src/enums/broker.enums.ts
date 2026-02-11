@@ -1,0 +1,11 @@
+export enum BrokerStatus {
+  PENDING_VERIFICATION = "PENDING_VERIFICATION",
+  VERIFIED = "VERIFIED",
+  SUSPENDED = "SUSPENDED",
+  BLOCKED = "BLOCKED",
+}
+
+export enum BrokerRole {
+  BROKER = "BROKER",
+  ADMIN = "ADMIN",
+}

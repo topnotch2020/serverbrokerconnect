@@ -1,0 +1,40 @@
+export enum ListingType {
+  RENT = "RENT",
+  SALE = "SALE",
+}
+
+export enum PropertyStatus {
+  DRAFTED = "DRAFTED",
+  UNVERIFIED = "UNVERIFIED",
+  VERIFIED = "VERIFIED",
+  EXPIRING_SOON = "EXPIRING_SOON",
+  EXPIRED = "EXPIRED",
+  SOLD = "SOLD",
+  DELETED = "DELETED",
+}
+
+export enum PropertyType {
+  APARTMENT = "APARTMENT",
+  ROW_HOUSE_OR_BUNGALOW = "ROW_HOUSE_OR_BUNGALOW",
+  STUDIO = "STUDIO",
+  PENT_HOUSE_OR_DUPLEX = "PENT_HOUSE_OR_DUPLEX",
+}
+
+export enum PropertyAge {
+  NEW = "NEW",
+  LESS_THAN_5_YEARS = "LESS_THAN_5_YEARS",
+  FIVE_TO_TEN_YEARS = "5_TO_10_YEARS",
+  GREATER_THAN_10_YEARS = "GREATER_THAN_10_YEARS",
+}
+
+export enum Furnishing {
+  UN_FURNISHED = "UN_FURNISHED",
+  SEMI_FURNISHED = "SEMI_FURNISHED",
+  FULLY_FURNISHED = "FULLY_FURNISHED",
+}
+
+export enum FloorLevel {
+  LOWER = "LOWER",
+  MIDDLE = "MIDDLE",
+  HIGHER = "HIGHER",
+}
