@@ -24,16 +24,33 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use(
-  "/docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    explorer: true,
-    swaggerOptions: {
-      url: undefined,
-    },
-  })
-);
+app.get("/docs", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>Broker Connect API Docs</title>
+        <link rel="stylesheet"
+          href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+      </head>
+      <body>
+        <div id="swagger-ui"></div>
+
+        <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+        <script>
+          window.onload = () => {
+            SwaggerUIBundle({
+              spec: ${JSON.stringify(swaggerSpec)},
+              dom_id: '#swagger-ui'
+            });
+          };
+        </script>
+      </body>
+    </html>
+  `);
+});
 
 
 app.use("/api/v1", v1Routes);
