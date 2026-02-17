@@ -7,6 +7,11 @@ info:
 
 servers:
   - url: http://localhost:4000/api/v1
+    description: Local
+  - url: https://serverbrokerconnect-h34t.vercel.app/api/v1
+    description: Production
+
+
 
 paths:
 
