@@ -24,7 +24,16 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    swaggerOptions: {
+      url: undefined,
+    },
+  })
+);
 
 
 app.use("/api/v1", v1Routes);
