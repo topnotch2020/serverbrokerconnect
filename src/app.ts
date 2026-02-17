@@ -16,6 +16,14 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "UP",
+    uptime: process.uptime(),
+    timestamp: new Date(),
+  });
+});
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
