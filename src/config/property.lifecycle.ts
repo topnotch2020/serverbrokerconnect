@@ -19,3 +19,24 @@ export const PROPERTY_TRANSITIONS: Record<
   SOLD: [],
   DELETED: [],
 };
+
+export const PROPERTY_STEPS = {
+  DRAFTED: {
+    required: ["title", "description"],
+  },
+  UNVERIFIED: {
+    required: ["price", "location"],
+  },
+  VERIFIED: {
+    required: ["documents"],
+  },
+  EXPIRED: {
+    required: [],
+  },
+  SOLD: {
+    required: [],
+  },
+  DELETED: {
+    required: [],
+  },
+};
