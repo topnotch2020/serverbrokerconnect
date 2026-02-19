@@ -13,4 +13,5 @@ router.get("/property", (req, res) => {
   });
 });
 
-export default router;
+export const metaRoutes = router;
+

@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/error.js";
+import { logger } from "../utils/logger.js";
+
 
 export const errorHandler = (
   err: any,
@@ -7,43 +9,97 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  // Log only in dev
-  if (process.env.NODE_ENV !== "production") {
-    console.error("ERROR 💥", err);
-  }
-  // Mongo duplicate key
+  const requestId = req.headers["x-request-id"];
+
+  // Default values
+  let statusCode = err.statusCode || 500;
+  let message = err.message || "Internal Server Error";
+  let errors: any = undefined;
+
+  /*
+   * -----------------------------
+   * Mongo Duplicate Key Error
+   * -----------------------------
+   */
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern)[0];
-    return res.status(409).json({
-      success: false,
-      message: `${field} already exists`,
-    });
+    statusCode = 409;
+    message = `${field} already exists`;
   }
-  // Mongoose validation errors (THIS FIXES YOUR ISSUE)
-  if (err.name === "ValidationError") {
-    const errors: Record<string, string> = {};
 
+  /*
+   * -----------------------------
+   * Mongoose Validation Error
+   * -----------------------------
+   */
+  if (err.name === "ValidationError") {
+    statusCode = 400;
+    message = "Validation failed";
+
+    errors = {};
     for (const field in err.errors) {
       errors[field] = err.errors[field].message;
     }
-
-    return res.status(400).json({
-      success: false,
-      message: "Invalid property data",
-      errors,
-    });
   }
 
-  // Known app errors
+  /*
+   * -----------------------------
+   * Invalid Mongo ObjectId
+   * -----------------------------
+   */
+  if (err.name === "CastError") {
+    statusCode = 400;
+    message = `Invalid ${err.path}`;
+  }
+
+  /*
+   * -----------------------------
+   * JWT Errors
+   * -----------------------------
+   */
+  if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "Invalid token";
+  }
+
+  if (err.name === "TokenExpiredError") {
+    statusCode = 401;
+    message = "Token expired";
+  }
+
+  /*
+   * -----------------------------
+   * Custom App Errors
+   * -----------------------------
+   */
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-    });
+    statusCode = err.statusCode;
+    message = err.message;
   }
-  // Fallback
-  return res.status(500).json({
+
+  /*
+   * -----------------------------
+   * Log Everything
+   * -----------------------------
+   */
+  logger.error("Unhandled Error", {
+    requestId,
+    statusCode,
+    message,
+    path: req.originalUrl,
+    method: req.method,
+    stack: err.stack,
+  });
+
+  /*
+   * -----------------------------
+   * Send Response
+   * -----------------------------
+   */
+  return res.status(statusCode).json({
     success: false,
-    message: "Internal server error",
+    message,
+    ...(errors && { errors }),
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
   });
 };

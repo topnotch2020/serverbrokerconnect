@@ -11,6 +11,9 @@ router.post("/:id/submit", authGuard, requireAuth, controller.submit);
 router.post("/:id/renew", authGuard, requireAuth, controller.renew);
 router.delete("/:id", authGuard, requireAuth, controller.delete);
 router.get("/me", authGuard, requireAuth, controller.getMine);
+router.get("/public",authGuard, requireAuth, controller.getPublic);
+router.get("/:id",authGuard, requireAuth, controller.getById);
+
 
 
 export const propertyRoutes = router;

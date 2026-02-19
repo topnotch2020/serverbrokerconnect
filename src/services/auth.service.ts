@@ -6,36 +6,57 @@ import { AppError } from "../utils/error.js";
 
 export class AuthService {
 
-  async register(email: string, password: string) {
-    console.log("EMAIL23", email,password)
+  async register(payload: {
+    fname: string;
+    lname: string;
+    email: string;
+    dob: string;
+    phone: string;
+    password: string;
+  }) {
+    const { fname, lname, dob, phone, password } = payload;
+    const email = payload.email.trim().toLowerCase();
     const existing = await BrokerModel.findOne({ email });
     if (existing) {
-    throw new AppError("Email already registered", 409);
-  }
+      throw new AppError("Email already registered", 409);
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const broker = await BrokerModel.create({
+      fname,
+      lname,
       email,
+      dob,
+      phone,
       password: hashedPassword,
     });
 
-    return broker;
+    return {
+      id: broker._id,
+      fname: broker.fname,
+      lname: broker.lname,
+      email: broker.email,
+      phone: broker.phone,
+    };
   }
 
-  async login(email: string, password: string) {
-    const broker = await BrokerModel.findOne({ email });
-    if (!broker) throw new Error("Invalid credentials");
+async login(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
 
-    const isMatch = await bcrypt.compare(password, broker.password);
-    if (!isMatch) throw new Error("Invalid credentials");
+  const broker = await BrokerModel.findOne({ email: normalizedEmail });
+  if (!broker) throw new AppError("Invalid credentials", 401);
 
-    return jwt.sign(
-      { id: broker._id },
-      ENV.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-  }
+  const isMatch = await bcrypt.compare(password, broker.password);
+  if (!isMatch) throw new AppError("Invalid credentials", 401);
+
+  return jwt.sign(
+    { id: broker._id },
+    ENV.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
 
   async logout(_brokerId: string) {
     // JWT is stateless → nothing to invalidate

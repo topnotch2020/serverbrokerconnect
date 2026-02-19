@@ -2,8 +2,8 @@ openapi: 3.0.0
 
 info:
   title: Broker Connect API
-  version: 1.0.0
-  description: API documentation for Broker Connect backend
+  version: 2.0.0
+  description: DTO-based API documentation for Broker Connect backend
 
 servers:
   - url: http://localhost:4000/api/v1
@@ -11,15 +11,12 @@ servers:
   - url: https://serverbrokerconnect-h34t.vercel.app/api/v1
     description: Production
 
-
-
 paths:
 
   /auth/register:
     post:
       summary: Register a new broker
-      tags:
-        - Auth
+      tags: [Auth]
       requestBody:
         required: true
         content:
@@ -39,8 +36,7 @@ paths:
   /auth/login:
     post:
       summary: Login broker
-      tags:
-        - Auth
+      tags: [Auth]
       requestBody:
         required: true
         content:
@@ -60,8 +56,7 @@ paths:
   /auth/logout:
     post:
       summary: Logout broker
-      tags:
-        - Auth
+      tags: [Auth]
       security:
         - bearerAuth: []
       responses:
@@ -75,8 +70,7 @@ paths:
   /auth/me:
     get:
       summary: Get current broker
-      tags:
-        - Auth
+      tags: [Auth]
       security:
         - bearerAuth: []
       responses:
@@ -86,14 +80,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BrokerResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
 
   /properties:
     post:
       summary: Create property draft
-      tags:
-        - Properties
+      tags: [Properties]
       security:
         - bearerAuth: []
       requestBody:
@@ -108,19 +99,74 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Property'
-        '401':
-          description: Unauthorized
+                $ref: '#/components/schemas/PropertyResponse'
+
+  /properties/{id}:
+    get:
+      summary: Get property by ID
+      tags: [Properties]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Property details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PropertyResponse'
+
+    patch:
+      summary: Update property draft
+      tags: [Properties]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyUpdateRequest'
+      responses:
+        '200':
+          description: Updated property
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyResponse'
+
+    delete:
+      summary: Delete property
+      tags: [Properties]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Property deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
 
   /properties/{id}/submit:
     post:
       summary: Submit property for verification
-      tags:
-        - Properties
+      tags: [Properties]
       security:
         - bearerAuth: []
       parameters:
@@ -135,13 +181,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Property'
+                $ref: '#/components/schemas/PropertyResponse'
 
   /properties/{id}/renew:
     post:
       summary: Renew property
-      tags:
-        - Properties
+      tags: [Properties]
       security:
         - bearerAuth: []
       parameters:
@@ -162,59 +207,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Property'
-
-  /properties/{id}:
-    patch:
-        summary: Update property draft
-        tags:
-          - Properties
-        security:
-          - bearerAuth: []
-        parameters:
-          - in: path
-            name: id
-            required: true
-            schema:
-              type: string
-        requestBody:
-          required: true
-          content:
-            application/json:
-              schema:
-                type: object
-        responses:
-          '200':
-            description: Updated property
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Property'
-          '404':
-            description: Property not found
-    delete:
-      summary: Delete property
-      tags:
-        - Properties
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Property deleted
+                $ref: '#/components/schemas/PropertyResponse'
 
   /properties/me:
     get:
       summary: Get broker properties
-      tags:
-        - Properties
+      tags: [Properties]
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED]
+          description: Filter properties by status
       responses:
         '200':
           description: List of properties
@@ -223,8 +231,45 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Property'
+                  $ref: '#/components/schemas/PropertyResponse'
 
+  /properties/public:
+    get:
+      summary: Get public verified properties
+      tags: [Properties]
+      parameters:
+        - in: query
+          name: city
+          required: false
+          schema:
+            type: string
+          description: Filter by city
+
+        - in: query
+          name: bhkType
+          required: false
+          schema:
+            type: string
+            enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 4+BHK]
+          description: Filter by BHK type
+
+        - in: query
+          name: propertyType
+          required: false
+          schema:
+            type: string
+            enum: [APARTMENT, ROW_HOUSE_OR_BUNGALOW, STUDIO, PENT_HOUSE_OR_DUPLEX]
+          description: Filter by property type
+
+      responses:
+        '200':
+          description: List of public verified properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertyResponse'
 
 components:
 
@@ -236,143 +281,253 @@ components:
 
   schemas:
 
+    # ================= AUTH =================
+
     RegisterRequest:
       type: object
-      required:
-        - email
-        - password
+      required: [fname, lname, dob, phone, email, password]
       properties:
+        fname: { type: string }
+        lname: { type: string }
+        dob:
+          type: string
+          format: date
+        phone: { type: string }
         email:
           type: string
-          example: broker@example.com
+          format: email
         password:
           type: string
-          example: strongPassword123
 
     LoginRequest:
       type: object
-      required:
-        - email
-        - password
+      required: [email, password]
       properties:
-        email:
-          type: string
-          example: broker@example.com
-        password:
-          type: string
-          example: strongPassword123
+        email: { type: string }
+        password: { type: string }
 
     LoginResponse:
       type: object
       properties:
         token:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
     BrokerResponse:
       type: object
       properties:
-        _id:
+        id:
           type: string
-          example: 65fa12bc98ab123456789012
+        fname:
+          type: string
+        lname:
+          type: string
+        dob:
+          type: string
+          format: date
+        phone:
+          type: string
         email:
           type: string
-          example: broker@example.com
+        role:
+          type: string
+        status:
+          type: string
         createdAt:
           type: string
           format: date-time
+
+    # ================= PROPERTY REQUEST =================
+
+    PropertyCreateRequest:
+      type: object
+      required: [listingType, propertyType, bhkType, address]
+      properties:
+        listingType:
+          type: string
+          enum: [RENT, SALE]
+        propertyType:
+          type: string
+          enum: [APARTMENT, ROW_HOUSE_OR_BUNGALOW, STUDIO, PENT_HOUSE_OR_DUPLEX]
+        propertyAge:
+          type: string
+          enum: [NEW, LESS_THAN_5_YEARS, 5_TO_10_YEARS, GREATER_THAN_10_YEARS]
+        furnishing:
+          type: string
+          enum: [UN_FURNISHED, SEMI_FURNISHED, FULLY_FURNISHED]
+        bhkType:
+          type: string
+          enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 4+BHK]
+        address:
+          $ref: '#/components/schemas/AddressRequest'
+        floor:
+          $ref: '#/components/schemas/Floor'
+        area:
+          $ref: '#/components/schemas/Area'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        expiresAt:
+          type: string
+          format: date-time
+
+    PropertyUpdateRequest:
+      type: object
+      properties:
+        listingType: { type: string }
+        propertyType: { type: string }
+        propertyAge: { type: string }
+        furnishing: { type: string }
+        bhkType: { type: string }
+        address:
+          $ref: '#/components/schemas/AddressRequest'
+        floor:
+          $ref: '#/components/schemas/Floor'
+        area:
+          $ref: '#/components/schemas/Area'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        expiresAt:
+          type: string
+          format: date-time
+
+    PropertyRenewRequest:
+      type: object
+      required: [expiresAt]
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+
+    # ================= PROPERTY RESPONSE (DTO) =================
+
+    PropertyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        listingType:
+          type: string
+        status:
+          type: string
+          example: ACTIVE
+        brokerName:
+          type: string
+          example: Rajesh Patel
+        postedAt:
+          type: string
+          format: date-time
+        propertyType:
+          $ref: '#/components/schemas/EnumWithLabel'
+        propertyAge:
+          $ref: '#/components/schemas/EnumWithLabel'
+        furnishing:
+          $ref: '#/components/schemas/EnumWithLabel'
+        bhkType:
+          type: string
+        address:
+          $ref: '#/components/schemas/AddressResponse'
+        floor:
+          $ref: '#/components/schemas/Floor'
+        area:
+          $ref: '#/components/schemas/Area'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EnumWithLabel:
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+
+    AddressRequest:
+      type: object
+      properties:
+        line1: { type: string }
+        line2: { type: string }
+        landmark: { type: string }
+        locality: { type: string }
+        city: { type: string }
+        state: { type: string }
+        country: { type: string }
+        pincode: { type: string }
+
+    AddressResponse:
+      type: object
+      properties:
+        line1: { type: string }
+        locality: { type: string }
+        city: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+
+    Floor:
+      type: object
+      properties:
+        totalFloors:
+          type: integer
+        level:
+          type: string
+          enum: [LOWER, MIDDLE, HIGHER]
+
+    Area:
+      type: object
+      properties:
+        carpet:
+          type: number
+        builtUp:
+          type: number
+
+    Image:
+      type: object
+      properties:
+        url:
+          type: string
+        type:
+          type: string
+          enum: [INTERIOR, EXTERIOR, FLOORPLAN, VIDEO]
+        isPrimary:
+          type: boolean
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
 
     MessageResponse:
       type: object
       properties:
         message:
           type: string
-          example: Logged out successfully
 
-    ErrorResponse:      # ✅ MOVED HERE
+    ErrorResponse:
       type: object
       properties:
         success:
           type: boolean
-          example: false
         message:
           type: string
-          example: Invalid credentials
         errors:
           type: object
 
-    Property:
-      type: object
-      properties:
-        _id:
-          type: string
-          example: 65fa12bc98ab123456789012
-        brokerId:
-          type: string
-        listingType:
-          type: string
-          example: rent
-        status:
-          type: string
-          example: drafted
-        propertyType:
-          type: string
-          example: flat
-        propertyAge:
-          type: string
-          example: new
-        furnishing:
-          type: string
-          example: semi_furnished
-        floor:
-          type: object
-          properties:
-            totalFloors:
-              type: integer
-              example: 10
-            level:
-              type: string
-              example: mid
-        area:
-          type: object
-          properties:
-            carpet:
-              type: number
-              example: 850
-            builtUp:
-              type: number
-              example: 1000
-        expiresAt:
-          type: string
-          format: date-time
-
-    PropertyCreateRequest:
-      type: object
-      properties:
-        listingType:
-          type: string
-        propertyType:
-          type: string
-        propertyAge:
-          type: string
-        furnishing:
-          type: string
-        floor:
-          type: object
-        area:
-          type: object
-
-    PropertyRenewRequest:
-      type: object
-      required:
-        - expiresAt
-      properties:
-        expiresAt:
-          type: string
-          format: date-time
-
   responses:
-
     UnauthorizedError:
       description: Unauthorized access
       content:

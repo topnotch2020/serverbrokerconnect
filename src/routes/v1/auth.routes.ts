@@ -1,14 +1,17 @@
 import { Router } from "express";
 import { AuthController } from "../../controllers/auth.controller.js";
 import { authGuard } from "../../middlewares/auth.middleware.js";
+import { asyncHandler } from "../../middlewares/asyncHandler.js";
 
 const router = Router();
 const controller = new AuthController();
 
-router.post("/login", controller.login);
-router.post("/register", controller.register);
+router.post("/login", asyncHandler(controller.login));
+router.post("/register", asyncHandler(controller.register));
 
-router.post("/logout", authGuard, controller.logout);
-router.get("/me", authGuard, controller.getMe);
+router.post("/logout", authGuard, asyncHandler(controller.logout));
+router.get("/me", authGuard, asyncHandler(controller.getMe));
 
-export default router;
+
+export const authRoutes =router;
+

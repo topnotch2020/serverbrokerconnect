@@ -4,9 +4,11 @@ import swaggerUi from "swagger-ui-express";
 import v1Routes from "./routes/v1/index.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { swaggerSpec } from "./docs/swagger.js";
+import { requestLogger } from "./utils/requestLogger.js";
 
 const app = express();
 app.use(express.json());
+// app.use(requestLogger);
 
 // Health route
 app.get("/", (req, res) => {
@@ -64,5 +66,12 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION 💥", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION 💥", err);
+});
 
 export default app;

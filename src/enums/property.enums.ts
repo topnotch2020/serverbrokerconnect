@@ -38,3 +38,12 @@ export enum FloorLevel {
   MIDDLE = "MIDDLE",
   HIGHER = "HIGHER",
 }
+
+export enum BHKType  {
+  RK= "1RK",
+  BHK_1= "1BHK",
+  BHK_2= "2BHK",
+  BHK_3= "3BHK",
+  BHK_4= "4BHK",
+  BHK_4_PLUS= "4+BHK",
+};

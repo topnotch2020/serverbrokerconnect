@@ -3,11 +3,25 @@ import { BrokerRole, BrokerStatus } from "../enums/broker.enums.js";
 
 const BrokerSchema = new Schema(
   {
-    name: String,
-    email: { type: String, unique: true },
+    fname: { type: String, required: true },
+    lname: { type: String, required: true },
+    dob: { type: Date, required: true },
+
+    email: {
+      type: String,
+      unique: true,
+      required: true,
+      lowercase: true,   
+      trim: true,     
+    },
     phone: { type: String },
     password: { type: String, required: true },
-    role: { type: String, enum: Object.values(BrokerRole) },
+    role: {
+      type: String,
+      enum: Object.values(BrokerRole),
+      default: BrokerRole.BROKER,
+    },
+
     status: { type: String, enum: Object.values(BrokerStatus) },
   },
   { timestamps: true }
