@@ -5,15 +5,14 @@ import { requireAuth } from "../../middlewares/requireAuth.js";
 
 const router = Router();
 const controller = new PropertyController();
+
 router.post("/", authGuard, requireAuth, controller.create);
 router.patch("/:id", authGuard, requireAuth, controller.update);
-router.post("/:id/submit", authGuard, requireAuth, controller.submit);
-router.post("/:id/renew", authGuard, requireAuth, controller.renew);
+router.patch("/:id/submit", authGuard, requireAuth, controller.submit);
+router.patch("/:id/renew", authGuard, requireAuth, controller.renew);
 router.delete("/:id", authGuard, requireAuth, controller.delete);
 router.get("/me", authGuard, requireAuth, controller.getMine);
-router.get("/public",authGuard, requireAuth, controller.getPublic);
-router.get("/:id",authGuard, requireAuth, controller.getById);
-
-
+router.get("/public", authGuard, requireAuth, controller.getPublic);
+router.get("/:id", authGuard, requireAuth, controller.getById);
 
 export const propertyRoutes = router;

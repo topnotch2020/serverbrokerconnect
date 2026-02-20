@@ -14,24 +14,18 @@ type PublicPropertyQuery = {
 export class PropertyService {
   // CREATE (Step 1)
   async createDraft(brokerId: string, payload: any) {
+    console.log("CALLED HERE,.,.,.,.")
     if (!brokerId) {
       throw new AppError("Broker not authenticated", 401);
     }
 
-    if (!payload || Object.keys(payload).length === 0) {
+    console.log("payload", payload)
+    if (!payload) {
       throw new AppError("Property data is required", 400);
     }
 
-    // Ensure only one primary image
-    if (payload.images) {
-      const primaryCount = payload.images.filter(
-        (img: any) => img.isPrimary
-      ).length;
-
-      if (primaryCount > 1) {
-        throw new AppError("Only one primary image allowed", 400);
-      }
-    }
+    console.log("CALLED HERE")
+    this.validatePrimaryImage(payload);
 
     return PropertyModel.create({
       brokerId,
@@ -39,24 +33,19 @@ export class PropertyService {
       ...payload,
     });
   }
-
   // UPDATE (Steps 2–6)
   async updateDraft(brokerId: string, propertyId: string, payload: any) {
-    if (payload.images) {
-      const primaryCount = payload.images.filter(
-        (img: any) => img.isPrimary
-      ).length;
-
-      if (primaryCount > 1) {
-        throw new AppError("Only one primary image allowed", 400);
-      }
-    }
+    this.validatePrimaryImage(payload);
 
     const property = await PropertyModel.findOneAndUpdate(
-      { _id: propertyId, brokerId, status: PropertyStatus.DRAFTED },
+      {
+        _id: propertyId,
+        brokerId,
+        status: PropertyStatus.DRAFTED,
+        isDeleted: false,
+      },
       { $set: payload },
       { new: true, runValidators: true }
-
     );
 
     if (!property) {
@@ -71,144 +60,110 @@ export class PropertyService {
 
   // SUBMIT (Final step)
   async submit(brokerId: string, propertyId: string) {
-    if (!brokerId) {
-      throw new AppError("Unauthorized", 401);
-    }
-    if (!propertyId) {
-      throw new AppError("Property ID is required", 400);
-    }
     const property = await PropertyModel.findOne({
       _id: propertyId,
       brokerId,
+      isDeleted: false,
     });
 
     if (!property) {
       throw new AppError("Property not found", 404);
     }
-    try {
-      assertTransition(property.status, PropertyStatus.UNVERIFIED);
-    } catch {
-      throw new AppError(
-        `Cannot submit property from status ${property.status}`,
-        400
-      );
-    }
+
+    assertTransition(property.status, PropertyStatus.UNVERIFIED);
+
     property.status = PropertyStatus.UNVERIFIED;
     await property.save();
 
     return property;
   }
 
+
   // VERIFY (Admin)
   async verify(propertyId: string) {
-    if (!propertyId) {
-      throw new AppError("Property ID is required", 400);
-    }
     const property = await PropertyModel.findById(propertyId);
-    if (!property) {
+
+    if (!property || property.isDeleted) {
       throw new AppError("Property not found", 404);
     }
-    try {
-      assertTransition(property.status, PropertyStatus.VERIFIED);
-    } catch {
-      throw new AppError(
-        `Property cannot be verified from status ${property.status}`,
-        400
-      );
-    }
+
+    assertTransition(property.status, PropertyStatus.VERIFIED);
+
     property.status = PropertyStatus.VERIFIED;
     await property.save();
 
     return property;
   }
 
+
   // EXPIRE (Cron / Job)
   async expire(propertyId: string) {
-    if (!propertyId) return null;
-
     const property = await PropertyModel.findById(propertyId);
-    if (!property) return null;
+
+    if (!property || property.isDeleted) return null;
 
     try {
       assertTransition(property.status, PropertyStatus.EXPIRED);
     } catch {
       return null;
     }
+
     property.status = PropertyStatus.EXPIRED;
     await property.save();
 
     return property;
   }
 
-// RENEW
+  // RENEW
   async renew(brokerId: string, propertyId: string, newExpiry: Date) {
-    if (!brokerId) {
-      throw new AppError("Unauthorized", 401);
-    }
-    if (!propertyId) {
-      throw new AppError("Property ID is required", 400);
-    }
-    if (!newExpiry || isNaN(new Date(newExpiry).getTime())) {
-      throw new AppError("Invalid expiry date", 400);
-    }
     const property = await PropertyModel.findOne({
       _id: propertyId,
       brokerId,
+      isDeleted: false,
     });
 
     if (!property) {
       throw new AppError("Property not found", 404);
     }
-    try {
-      assertTransition(property.status, PropertyStatus.VERIFIED);
-    } catch {
-      throw new AppError(
-        `Only verified properties can be renewed (current: ${property.status})`,
-        400
-      );
-    }
+
+    assertTransition(property.status, PropertyStatus.VERIFIED);
+
     property.expiresAt = newExpiry;
     await property.save();
 
     return property;
   }
 
+
   // DELETE
   async delete(brokerId: string, propertyId: string) {
-    if (!brokerId) {
-      throw new AppError("Unauthorized", 401);
-    }
-
-    if (!propertyId) {
-      throw new AppError("Property ID is required", 400);
-    }
-
-    const deleted = await PropertyModel.findOneAndDelete({
+    const property = await PropertyModel.findOne({
       _id: propertyId,
       brokerId,
+      isDeleted: false,
     });
 
-    if (!deleted) {
+    if (!property) {
       throw new AppError("Property not found", 404);
     }
+
+    property.isDeleted = true;
+    await property.save();
 
     return { success: true };
   }
 
   // READ
 
-  async getById(propertyId: string) {
-    if (!propertyId) {
-      throw new AppError("Property ID is required", 400);
-    }
 
-  const property = await PropertyModel
-    .findById(propertyId)
-    .populate({
+  async getById(propertyId: string) {
+    const property = await PropertyModel.findOne({
+      _id: propertyId,
+      isDeleted: false,
+    }).populate({
       path: "brokerId",
       select: "fname lname email phone profileImage",
     });
-
 
     if (!property) {
       throw new AppError("Property not found", 404);
@@ -217,25 +172,23 @@ export class PropertyService {
     return property;
   }
 
-
   async getMyProperties(brokerId: string, status?: string) {
-    if (!brokerId) {
-      throw new AppError("Unauthorized", 401);
-    }
-
-    const filter: any = { brokerId };
+    const filter: any = {
+      brokerId,
+      isDeleted: false,
+    };
 
     const now = new Date();
 
     if (status === "ACTIVE") {
-    filter.status = { $ne: "EXPIRED" };
+      filter.status = { $ne: PropertyStatus.EXPIRED };
       filter.expiresAt = { $gte: now };
     }
 
     if (status === "EXPIRED") {
       filter.$or = [
-        { status: "EXPIRED" },
-        { expiresAt: { $lt: now } }
+        { status: PropertyStatus.EXPIRED },
+        { expiresAt: { $lt: now } },
       ];
     }
 
@@ -243,121 +196,112 @@ export class PropertyService {
   }
 
 
-    async getPublic(
-      params: PublicPropertyQuery,
-      currentUserId: string
-    ) {
-      if (!currentUserId) {
-        throw new AppError("Unauthorized", 401);
-      }
+  async getPublic(params: PublicPropertyQuery, currentUserId: string) {
+    console.log("PORPSSS.", params, currentUserId)
+    const now = new Date();
 
-      if (!params.listingType) {
-        throw new AppError("listingType is required", 400);
-      }
-
-      const now = new Date();
-
-      const matchStage: any = {
-        status: { $ne: PropertyStatus.EXPIRED },
-        listingType: params.listingType,
-        brokerId: { $ne: new mongoose.Types.ObjectId(currentUserId) },
-        $or: [
-          { expiresAt: { $exists: false } },
-          { expiresAt: { $gte: now } },
+    console.log("CALLED HERE,.,.,.,.")
+    const matchStage: any = {
+      status: {
+        $in: [
+          PropertyStatus.DRAFTED,
+          PropertyStatus.UNVERIFIED,
+          PropertyStatus.VERIFIED,
         ],
-      };
+      },
+      listingType: params.listingType,
+      isDeleted: false,
+      brokerId: { $ne: new mongoose.Types.ObjectId(currentUserId) },
+    };
+    console.log("MATCH STAGE:", JSON.stringify(matchStage, null, 2));
 
-      const pipeline: any[] = [
-        { $match: matchStage },
+    const pipeline: any[] = [
+      { $match: matchStage },
 
-        {
-          $lookup: {
-            from: "brokers",
-            localField: "brokerId",
-            foreignField: "_id",
-            as: "broker",
-          },
+      {
+        $lookup: {
+          from: "brokers",
+          localField: "brokerId",
+          foreignField: "_id",
+          as: "broker",
         },
+      },
 
-        { $unwind: "$broker" },
+      { $unwind: "$broker" },
 
-        // 🔥 ONLY ADDITION STARTS HERE
-        {
-          $lookup: {
-            from: "favorites",
-            let: { propertyId: "$_id" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$property", "$$propertyId"] },
-                      {
-                        $eq: [
-                          "$broker",
-                          new mongoose.Types.ObjectId(currentUserId),
-                        ],
-                      },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "favoriteData",
-          },
-        },
-
-        {
-          $addFields: {
-            isFavorited: {
-              $gt: [{ $size: "$favoriteData" }, 0],
-            },
-          },
-        },
-
-        {
-          $project: {
-            favoriteData: 0,
-          },
-        },
-        // 🔥 ONLY ADDITION ENDS HERE
-      ];
-
-      // 🔥 KEEP YOUR SEARCH EXACTLY AS IT IS
-      if (params.search) {
-        const regex = new RegExp(params.search, "i");
-
-        pipeline.push({
-          $match: {
-            $or: [
-              { "address.city": regex },
-              { "address.locality": regex },
-              { "broker.fname": regex },
-              { "broker.lname": regex },
-              {
+      {
+        $lookup: {
+          from: "favorites",
+          let: { propertyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
                 $expr: {
-                  $regexMatch: {
-                    input: { $concat: ["$broker.fname", " ", "$broker.lname"] },
-                    regex: regex,
-                  },
+                  $and: [
+                    { $eq: ["$property", "$$propertyId"] },
+                    {
+                      $eq: [
+                        "$broker",
+                        new mongoose.Types.ObjectId(currentUserId),
+                      ],
+                    },
+                  ],
                 },
               },
-            ],
-          },
-        });
-      }
+            },
+          ],
+          as: "favoriteData",
+        },
+      },
 
-      // 🔥 KEEP SORT
-      pipeline.push({ $sort: { createdAt: -1 } });
+      {
+        $addFields: {
+          isFavorited: { $gt: [{ $size: "$favoriteData" }, 0] },
+        },
+      },
 
-      const properties = await PropertyModel.aggregate(pipeline);
+      { $project: { favoriteData: 0 } },
+    ];
 
-      return properties;
+    if (params.search) {
+      const regex = new RegExp(params.search, "i");
+
+      pipeline.push({
+        $match: {
+          $or: [
+            { "address.city": regex },
+            { "address.locality": regex },
+            { "broker.fname": regex },
+            { "broker.lname": regex },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: { $concat: ["$broker.fname", " ", "$broker.lname"] },
+                  regex: regex,
+                },
+              },
+            },
+          ],
+        },
+      });
     }
 
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    return PropertyModel.aggregate(pipeline);
+  }
 
 
 
+  private validatePrimaryImage(payload: any) {
+    if (payload.images) {
+      const primaryCount = payload.images.filter(
+        (img: any) => img.isPrimary
+      ).length;
 
-
+      if (primaryCount > 1) {
+        throw new AppError("Only one primary image allowed", 400);
+      }
+    }
+  }
 };

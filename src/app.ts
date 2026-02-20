@@ -5,6 +5,8 @@ import v1Routes from "./routes/v1/index.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { swaggerSpec } from "./docs/swagger.js";
 import { requestLogger } from "./utils/requestLogger.js";
+import { uploadRoutes } from "./routes/v1/upload.route.js";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -25,6 +27,7 @@ app.get("/health", (req, res) => {
     timestamp: new Date(),
   });
 });
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/docs", (req, res) => {
   res.setHeader("Content-Type", "text/html");
@@ -54,7 +57,7 @@ app.get("/docs", (req, res) => {
   `);
 });
 
-
+app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1", v1Routes);
 
 app.use((req, res) => {

@@ -48,6 +48,8 @@ export class FavoriteService {
   }
 
   async getMyFavorites(brokerId: string) {
+
+    console.log("BROKERID",brokerId)
     const favorites = await FavoriteModel.find({ broker: brokerId })
       .populate({
         path: "property",
@@ -58,6 +60,7 @@ export class FavoriteService {
       })
       .sort({ createdAt: -1 });
 
+    console.log("FAVVVVV", favorites)
     return favorites;
   }
 
