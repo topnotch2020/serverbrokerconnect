@@ -10,7 +10,8 @@ import path from "path";
 
 const app = express();
 app.use(express.json());
-// app.use(requestLogger);
+app.use(requestLogger);
+
 
 // Health route
 app.get("/", (req, res) => {

@@ -16,4 +16,5 @@ export const PropertyAgeLabels: Record<string, string> = {
   LESS_THAN_5_YEARS: "Less than 5 Years",
   FIVE_TO_TEN_YEARS: "5 to 10 Years",
   GREATER_THAN_10_YEARS: "More than 10 Years",
+  "5_TO_10_YEARS": "5 to 10 Years",
 };

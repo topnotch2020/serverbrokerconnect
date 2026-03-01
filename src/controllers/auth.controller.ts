@@ -6,7 +6,6 @@ import { BrokerDTO } from "../dtos/auth.dto.js";
 export class AuthController {
   login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    console.log("EMAIL",email,password);
     const token = await new AuthService().login(email, password);
     res.json({ token });
   };

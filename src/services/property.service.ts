@@ -8,23 +8,23 @@ import { IPropertyPopulated } from "../types/property.types.js";
 type PublicPropertyQuery = {
   listingType: ListingType;
   search?: string;
+  bhkType?: string;
+  furnishing?: string;
+  sort?: "NEWEST" | "OLDEST";
 };
 
 
 export class PropertyService {
   // CREATE (Step 1)
   async createDraft(brokerId: string, payload: any) {
-    console.log("CALLED HERE,.,.,.,.")
     if (!brokerId) {
       throw new AppError("Broker not authenticated", 401);
     }
 
-    console.log("payload", payload)
     if (!payload) {
       throw new AppError("Property data is required", 400);
     }
 
-    console.log("CALLED HERE")
     this.validatePrimaryImage(payload);
 
     return PropertyModel.create({
@@ -169,7 +169,14 @@ export class PropertyService {
       throw new AppError("Property not found", 404);
     }
 
-    return property;
+    const obj: any = property.toObject();
+
+    if (obj.brokerId) {
+      obj.broker = obj.brokerId;
+      delete obj.brokerId;
+    }
+
+    return obj;
   }
 
   async getMyProperties(brokerId: string, status?: string) {
@@ -197,10 +204,8 @@ export class PropertyService {
 
 
   async getPublic(params: PublicPropertyQuery, currentUserId: string) {
-    console.log("PORPSSS.", params, currentUserId)
     const now = new Date();
 
-    console.log("CALLED HERE,.,.,.,.")
     const matchStage: any = {
       status: {
         $in: [
@@ -213,7 +218,6 @@ export class PropertyService {
       isDeleted: false,
       brokerId: { $ne: new mongoose.Types.ObjectId(currentUserId) },
     };
-    console.log("MATCH STAGE:", JSON.stringify(matchStage, null, 2));
 
     const pipeline: any[] = [
       { $match: matchStage },
@@ -286,7 +290,26 @@ export class PropertyService {
       });
     }
 
-    pipeline.push({ $sort: { createdAt: -1 } });
+    // Apply filters (bhkType, furnishing)
+    const filterMatch: any = {};
+    if (params.bhkType) {
+      filterMatch.bhkType = params.bhkType;
+    }
+    if (params.furnishing) {
+      filterMatch.furnishing = params.furnishing;
+    }
+
+    if (Object.keys(filterMatch).length > 0) {
+      pipeline.push({ $match: filterMatch });
+    }
+
+    // Handle sorting
+    if (params.sort === "OLDEST") {
+      pipeline.push({ $sort: { createdAt: 1 } });
+    } else {
+      // Default to NEWEST
+      pipeline.push({ $sort: { createdAt: -1 } });
+    }
 
     return PropertyModel.aggregate(pipeline);
   }

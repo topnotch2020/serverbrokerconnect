@@ -7,8 +7,6 @@ import { AppError } from "../utils/error.js";
 export class FavoriteService {
 
   async addFavorite(brokerId: string, propertyId: string) {
-    console.log("ADD CALLED");
-
     const property = await PropertyModel.findById(propertyId);
 
     if (!property) {
@@ -34,7 +32,6 @@ export class FavoriteService {
 
 
   async removeFavorite(brokerId: string, propertyId: string) {
-     console.log("REMOVE CALLED")
     const favorite = await FavoriteModel.findOneAndDelete({
       broker: brokerId,
       property: propertyId,
@@ -48,8 +45,6 @@ export class FavoriteService {
   }
 
   async getMyFavorites(brokerId: string) {
-
-    console.log("BROKERID",brokerId)
     const favorites = await FavoriteModel.find({ broker: brokerId })
       .populate({
         path: "property",
@@ -60,7 +55,6 @@ export class FavoriteService {
       })
       .sort({ createdAt: -1 });
 
-    console.log("FAVVVVV", favorites)
     return favorites;
   }
 

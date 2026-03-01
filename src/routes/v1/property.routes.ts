@@ -12,7 +12,7 @@ router.patch("/:id/submit", authGuard, requireAuth, controller.submit);
 router.patch("/:id/renew", authGuard, requireAuth, controller.renew);
 router.delete("/:id", authGuard, requireAuth, controller.delete);
 router.get("/me", authGuard, requireAuth, controller.getMine);
-router.get("/public", authGuard, requireAuth, controller.getPublic);
+router.get("/public", controller.getPublic);  // ✅ Public - no auth required
 router.get("/:id", authGuard, requireAuth, controller.getById);
 
 export const propertyRoutes = router;

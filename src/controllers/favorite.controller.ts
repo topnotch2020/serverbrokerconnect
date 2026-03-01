@@ -52,7 +52,7 @@ export class FavoriteController {
           return new PropertyDTO(property);
         });
 
-        console.log("PEROPERTIES",properties)
+
         res.json(properties);
       }
     );

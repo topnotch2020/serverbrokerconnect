@@ -1,0 +1,6 @@
+{"timestamp":"2026-02-23T16:37:13.437Z","level":"info","message":"Incoming Request","requestId":"f2731f76-3f5c-4d8f-af4c-83fed598d3f9","method":"GET","url":"/DOCS","body":{},"query":{},"params":{},"ip":"::1"}
+{"timestamp":"2026-02-23T16:37:13.447Z","level":"info","message":"Outgoing Response","requestId":"f2731f76-3f5c-4d8f-af4c-83fed598d3f9","statusCode":200,"duration":"11ms"}
+{"timestamp":"2026-02-23T16:37:14.752Z","level":"info","message":"Incoming Request","requestId":"4caa7fcc-e556-4b60-afa2-ed25bcc5c2eb","method":"GET","url":"/favicon.ico","body":{},"query":{},"params":{},"ip":"::1"}
+{"timestamp":"2026-02-23T16:37:14.754Z","level":"info","message":"Outgoing Response","requestId":"4caa7fcc-e556-4b60-afa2-ed25bcc5c2eb","statusCode":404,"duration":"2ms"}
+{"timestamp":"2026-02-23T16:37:28.405Z","level":"info","message":"Incoming Request","requestId":"6f4f6db6-0abc-4e9b-b9ca-b7d25130928f","method":"GET","url":"/DOCS","body":{},"query":{},"params":{},"ip":"::1"}
+{"timestamp":"2026-02-23T16:37:28.407Z","level":"info","message":"Outgoing Response","requestId":"6f4f6db6-0abc-4e9b-b9ca-b7d25130928f","statusCode":304,"duration":"2ms"}

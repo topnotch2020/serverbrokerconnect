@@ -118,7 +118,7 @@ export class PropertyController {
   /* ========================================================= */
 
   getPublic = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { listingType, search } = req.query;
+    const { listingType, search, bhkType, furnishing, sort } = req.query;
 
     if (!listingType) {
       throw new AppError("listingType is required", 400);
@@ -128,11 +128,13 @@ export class PropertyController {
       {
         listingType: listingType as any,
         search: search as string | undefined,
+        bhkType: bhkType as string | undefined,
+        furnishing: furnishing as string | undefined,
+        sort: sort as "NEWEST" | "OLDEST" | undefined,
       },
       req.userId
     );
 
-    console.log("properties",properties)
     res.json(properties.map((p) => new PropertyDTO(p)));
   });
 }

@@ -44,7 +44,9 @@ export class AuthService {
 async login(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
 
+  console.log("Attempting login for:", normalizedEmail);
   const broker = await BrokerModel.findOne({ email: normalizedEmail });
+  console.log("Found broker:", broker ? broker._id : "None");
   if (!broker) throw new AppError("Invalid credentials", 401);
 
   const isMatch = await bcrypt.compare(password, broker.password);

@@ -9,16 +9,28 @@ export const authGuard = (
   _res: Response,
   next: NextFunction
 ) => {
-  const header = req.headers.authorization;
+  try {
+    const header = req.headers.authorization;
 
-  if (!header || !header.startsWith("Bearer ")) {
-    throw new AppError("Unauthorized", 401);
+    if (!header || !header.startsWith("Bearer ")) {
+      throw new AppError("Unauthorized", 401);
+    }
+
+    const token = header.split(" ")[1];
+    const payload = jwt.verify(token, ENV.JWT_SECRET) as { id: string };
+    (req as any).userId = payload.id;
+
+    next();
+  } catch (error: any) {
+    // Pass error to error handler middleware
+    if (error instanceof AppError) {
+      next(error);
+    } else if (error.name === "JsonWebTokenError") {
+      next(new AppError("Invalid token", 401));
+    } else if (error.name === "TokenExpiredError") {
+      next(new AppError("Token expired", 401));
+    } else {
+      next(error);
+    }
   }
-
-  const token = header.split(" ")[1];
-
-  const payload = jwt.verify(token, ENV.JWT_SECRET) as { id: string };
-  req.userId = payload.id;
-
-  next();
 };

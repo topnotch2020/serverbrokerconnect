@@ -36,8 +36,6 @@ router.post(
       ? `${cleanDomain}/uploads/${relativePath}`
       : null;
 
-    console.log({ localUrl, publicUrl: ngrokUrl });
-
     res.json({
       localUrl,
       publicUrl: ngrokUrl,
