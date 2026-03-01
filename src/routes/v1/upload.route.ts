@@ -1,45 +1,53 @@
 import { Router } from "express";
-import { authGuard } from "../../middlewares/auth.middleware";
-import { requireAuth } from "../../middlewares/requireAuth";
-import { upload } from "../../middlewares/upload.middleware";
-import path from "path";
+import { authGuard } from "../../middlewares/auth.middleware.js";
+import { requireAuth } from "../../middlewares/requireAuth.js";
+import { cloudinaryUpload } from "../../services/cloudinary.service.js";
 
 const router = Router();
 
+/**
+ * @route POST /api/v1/upload/property
+ * @desc Upload property image to Cloudinary
+ * @param {File} image - Property image file (jpg, jpeg, png, webp)
+ * @returns {Object} Cloudinary public_id and secure_url
+ */
 router.post(
   "/property",
   authGuard,
   requireAuth,
-  upload.single("image"),
-  (req: any, res) => {
+  cloudinaryUpload.single("image"),
+  async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "File missing",
+          code: "FILE_MISSING"
+        });
+      }
 
-    if (!req.file) {
-      return res.status(400).json({
+      // Cloudinary response
+      const imageUrl = req.file.secure_url;
+      const publicId = req.file.public_id;
+
+      res.json({
+        success: true,
+        data: {
+          url: imageUrl,
+          publicId: publicId,
+          width: req.file.width,
+          height: req.file.height,
+          size: req.file.size,
+        },
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({
         success: false,
-        message: "File missing"
+        message: "Image upload failed",
+        code: "UPLOAD_FAILED"
       });
     }
-
-    // Get relative path from uploads folder
-    const relativePath = path
-      .relative(
-        path.join(process.cwd(), "uploads"),
-        req.file.path
-      )
-      .replace(/\\/g, "/"); // Windows fix
-
-    const localUrl = `http://localhost:4000/uploads/${relativePath}`;
-
-    const ngrokDomain = process.env.NGROK_URL;
-    const cleanDomain = ngrokDomain?.replace(/\/+$/, "");
-    const ngrokUrl = cleanDomain
-      ? `${cleanDomain}/uploads/${relativePath}`
-      : null;
-
-    res.json({
-      localUrl,
-      publicUrl: ngrokUrl,
-    });
   }
 );
 

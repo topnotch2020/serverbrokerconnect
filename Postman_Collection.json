@@ -1,0 +1,704 @@
+{
+  "info": {
+    "_postman_id": "broker-connect-api-collection",
+    "name": "Broker Connect API",
+    "description": "Complete API collection for testing Broker Connect server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "id": "auth-register",
+          "name": "Register Broker",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fname\": \"John\",\n  \"lname\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"dob\": \"1990-01-15\",\n  \"phone\": \"9876543210\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "auth-login",
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "auth-me",
+          "name": "Get Current Broker",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "auth-logout",
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Brokers",
+      "item": [
+        {
+          "id": "brokers-list",
+          "name": "List All Brokers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/brokers?limit=20&skip=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "brokers"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "brokers-me",
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/brokers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "brokers", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "brokers-update",
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/brokers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "brokers", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "brokers-get-by-id",
+          "name": "Get Broker by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/brokers/{{brokerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "brokers", "{{brokerId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "item": [
+        {
+          "id": "properties-create",
+          "name": "Create Property Draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingType\": \"RENT\",\n  \"propertyType\": \"APARTMENT\",\n  \"bhkType\": \"2BHK\",\n  \"pricing\": {\n    \"price\": 50000,\n    \"maintenance\": 2000,\n    \"deposit\": 150000\n  },\n  \"address\": {\n    \"line1\": \"123 Main Street\",\n    \"locality\": \"Downtown\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\"\n  },\n  \"tenantsAllowed\": [\"Family\"],\n  \"amenities\": [\"Lift\", \"Parking\", \"Security\"],\n  \"availableFrom\": \"Immediate\",\n  \"facing\": \"East\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-update",
+          "name": "Update Property Draft",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pricing\": {\n    \"price\": 55000,\n    \"maintenance\": 2500,\n    \"deposit\": 165000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-submit",
+          "name": "Submit Property for Review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/{{propertyId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "{{propertyId}}", "submit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-get-my",
+          "name": "Get My Properties",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/me?status=ACTIVE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "me"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-get-public",
+          "name": "Get Public Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/public?listingType=RENT&city=Mumbai&sort=NEWEST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "public"],
+              "query": [
+                {
+                  "key": "listingType",
+                  "value": "RENT"
+                },
+                {
+                  "key": "city",
+                  "value": "Mumbai"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "bhkType",
+                  "value": ""
+                },
+                {
+                  "key": "furnishing",
+                  "value": ""
+                },
+                {
+                  "key": "sort",
+                  "value": "NEWEST"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-get-by-id",
+          "name": "Get Property by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-delete",
+          "name": "Delete Property",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "properties-renew",
+          "name": "Renew Property Listing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expiresAt\": \"2026-04-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/properties/{{propertyId}}/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "properties", "{{propertyId}}", "renew"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "id": "favorites-add",
+          "name": "Add to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/favorites/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "favorites", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "favorites-get-my",
+          "name": "Get My Favorites",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/favorites/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "favorites", "my"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "favorites-remove",
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/favorites/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "favorites", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "favorites-check",
+          "name": "Check if Favorited",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/favorites/check/{{propertyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "favorites", "check", "{{propertyId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "id": "notifications-list",
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications?limit=20&skip=0&unreadOnly=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "unreadOnly",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "notifications-unread-count",
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "unread-count"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "notifications-mark-read",
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "{{notificationId}}", "read"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "notifications-mark-all-read",
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "read-all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "notifications-delete",
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "notifications", "{{notificationId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "id": "upload-image",
+          "name": "Upload Property Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "path/to/image.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/upload/property",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "upload", "property"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Metadata",
+      "item": [
+        {
+          "id": "meta-property",
+          "name": "Get Property Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/meta/property",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "meta", "property"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "id": "system-health",
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "system-api-info",
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "brokerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "propertyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

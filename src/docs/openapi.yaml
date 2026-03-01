@@ -3,88 +3,239 @@ openapi: 3.0.0
 info:
   title: Broker Connect API
   version: 2.0.0
-  description: DTO-based API documentation for Broker Connect backend
+  description: Complete REST API for real estate brokerage platform
+  contact:
+    name: Topnotch Development Team
+  license:
+    name: MIT
 
 servers:
   - url: http://localhost:4000/api/v1
-    description: Local
+    description: Local Development
+  - url: https://staging.broker-connect.com/api/v1
+    description: Staging Environment
   - url: https://serverbrokerconnect-h34t.vercel.app/api/v1
     description: Production
 
+tags:
+  - name: Authentication
+    description: User registration, login, and profile management
+  - name: Brokers
+    description: Broker profile and management endpoints
+  - name: Properties
+    description: Property listing creation, management, and search
+  - name: Favorites
+    description: User favorite properties management
+  - name: Notifications
+    description: Notification retrieval and management
+  - name: Upload
+    description: File upload to Cloudinary
+  - name: System
+    description: System endpoints (health, metadata)
+
 paths:
+
+  # ==================== AUTHENTICATION ====================
 
   /auth/register:
     post:
+      tags: [Authentication]
       summary: Register a new broker
-      tags: [Auth]
+      description: Create a new broker account with email, password, and personal information
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              basic:
+                value:
+                  fname: John
+                  lname: Doe
+                  email: john@example.com
+                  dob: "1990-01-15"
+                  phone: "9876543210"
+                  password: SecurePass123!
       responses:
-        '200':
-          description: Broker created successfully
+        201:
+          description: Broker registered successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BrokerResponse'
-        '409':
-          $ref: '#/components/responses/ConflictError'
+                $ref: '#/components/schemas/RegisterResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        409:
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/login:
     post:
-      summary: Login broker
-      tags: [Auth]
+      tags: [Authentication]
+      summary: Login to account
+      description: Get JWT token by providing email and password
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
+            examples:
+              basic:
+                value:
+                  email: john@example.com
+                  password: SecurePass123!
       responses:
-        '200':
-          description: JWT token returned
+        200:
+          description: Login successful
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+        401:
+          $ref: '#/components/responses/Unauthorized'
 
-  /auth/logout:
-    post:
-      summary: Logout broker
-      tags: [Auth]
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current broker profile
+      description: Retrieve the authenticated broker's profile information
       security:
         - bearerAuth: []
       responses:
-        '200':
+        200:
+          description: Broker profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout from account
+      description: Logout the current broker (client should delete token)
+      security:
+        - bearerAuth: []
+      responses:
+        200:
           description: Logout successful
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
 
-  /auth/me:
+  # ==================== BROKERS ====================
+
+  /brokers:
     get:
-      summary: Get current broker
-      tags: [Auth]
+      tags: [Brokers]
+      summary: List all brokers
+      description: Get paginated list of all brokers (public information only)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Number of results per page
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
+      responses:
+        200:
+          description: List of brokers with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerListResponse'
+
+  /brokers/me:
+    get:
+      tags: [Brokers]
+      summary: Get my profile
+      description: Get the authenticated broker's full profile
       security:
         - bearerAuth: []
       responses:
-        '200':
-          description: Current broker data
+        200:
+          description: Broker profile
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/BrokerResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Brokers]
+      summary: Update my profile
+      description: Update the authenticated broker's profile information (excluding password)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrokerUpdateRequest'
+      responses:
+        200:
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/BrokerResponse'
+                  message:
+                    type: string
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /brokers/{id}:
+    get:
+      tags: [Brokers]
+      summary: Get broker profile by ID
+      description: Get public profile information of a specific broker
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Broker MongoDB ID
+      responses:
+        200:
+          description: Broker profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== PROPERTIES ====================
 
   /properties:
     post:
-      summary: Create property draft
       tags: [Properties]
+      summary: Create property draft
+      description: Create a new property in DRAFTED status
       security:
         - bearerAuth: []
       requestBody:
@@ -94,34 +245,118 @@ paths:
             schema:
               $ref: '#/components/schemas/PropertyCreateRequest'
       responses:
-        '201':
+        201:
           description: Property created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PropertyResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /properties/me:
+    get:
+      tags: [Properties]
+      summary: Get my properties
+      description: Get all properties created by the authenticated broker
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED]
+          description: Filter by status
+      responses:
+        200:
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertyResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /properties/public:
+    get:
+      tags: [Properties]
+      summary: Search public properties
+      description: Search and filter verified properties available for rent or sale
+      parameters:
+        - in: query
+          name: listingType
+          required: true
+          schema:
+            type: string
+            enum: [RENT, SALE]
+          description: Property listing type
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by city, locality, or broker name
+        - in: query
+          name: bhkType
+          schema:
+            type: string
+            enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 5BHK]
+          description: Filter by BHK type
+        - in: query
+          name: furnishing
+          schema:
+            type: string
+            enum: [UNFURNISHED, SEMI_FURNISHED, FULLY_FURNISHED]
+          description: Filter by furnishing type
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [NEWEST, OLDEST]
+            default: NEWEST
+          description: Sort order
+      responses:
+        200:
+          description: List of properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertyResponse'
 
   /properties/{id}:
     get:
-      summary: Get property by ID
       tags: [Properties]
+      summary: Get property by ID
+      description: Get detailed information about a specific property
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: string
+          description: Property MongoDB ID
       responses:
-        '200':
+        200:
           description: Property details
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PropertyResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
 
     patch:
-      summary: Update property draft
       tags: [Properties]
+      summary: Update property draft
+      description: Update property details (only in DRAFTED status)
       security:
         - bearerAuth: []
       parameters:
@@ -137,16 +372,21 @@ paths:
             schema:
               $ref: '#/components/schemas/PropertyUpdateRequest'
       responses:
-        '200':
-          description: Updated property
+        200:
+          description: Property updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PropertyResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
 
     delete:
-      summary: Delete property
       tags: [Properties]
+      summary: Delete property
+      description: Soft delete property (marks as deleted but keeps in database)
       security:
         - bearerAuth: []
       parameters:
@@ -156,17 +396,20 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        200:
           description: Property deleted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /properties/{id}/submit:
-    post:
-      summary: Submit property for verification
+    patch:
       tags: [Properties]
+      summary: Submit property for review
+      description: Change property status from DRAFTED to UNVERIFIED for admin review
       security:
         - bearerAuth: []
       parameters:
@@ -176,17 +419,22 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        200:
           description: Property submitted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PropertyResponse'
+        400:
+          description: Invalid status transition
+        404:
+          $ref: '#/components/responses/NotFound'
 
   /properties/{id}/renew:
-    post:
-      summary: Renew property
+    patch:
       tags: [Properties]
+      summary: Renew property listing
+      description: Extend the expiry date of a property listing
       security:
         - bearerAuth: []
       parameters:
@@ -202,74 +450,288 @@ paths:
             schema:
               $ref: '#/components/schemas/PropertyRenewRequest'
       responses:
-        '200':
+        200:
           description: Property renewed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PropertyResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
 
-  /properties/me:
+  # ==================== FAVORITES ====================
+
+  /favorites/{propertyId}:
+    post:
+      tags: [Favorites]
+      summary: Add to favorites
+      description: Add a property to the user's favorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: propertyId
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: Added to favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        400:
+          description: Cannot favorite own property or already favorited
+        404:
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Favorites]
+      summary: Remove from favorites
+      description: Remove a property from the user's favorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: propertyId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Removed from favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /favorites/my:
     get:
-      summary: Get broker properties
-      tags: [Properties]
+      tags: [Favorites]
+      summary: Get my favorites
+      description: Get list of properties added to favorites by the user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List of favorite properties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PropertyResponse'
+
+  /favorites/check/{propertyId}:
+    get:
+      tags: [Favorites]
+      summary: Check if property is favorited
+      description: Check if a specific property is in user's favorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: propertyId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Favorite status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isFavorited:
+                    type: boolean
+
+  # ==================== NOTIFICATIONS ====================
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get my notifications
+      description: Get paginated list of notifications for the authenticated user
       security:
         - bearerAuth: []
       parameters:
         - in: query
-          name: status
-          required: false
+          name: limit
           schema:
-            type: string
-            enum: [ACTIVE, EXPIRED]
-          description: Filter properties by status
+            type: integer
+            default: 20
+          description: Number of results per page
+        - in: query
+          name: skip
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
+        - in: query
+          name: unreadOnly
+          schema:
+            type: boolean
+            default: false
+          description: Show only unread notifications
       responses:
-        '200':
-          description: List of properties
+        200:
+          description: List of notifications with pagination
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PropertyResponse'
+                $ref: '#/components/schemas/NotificationListResponse'
 
-  /properties/public:
+  /notifications/unread-count:
     get:
-      summary: Get public verified properties
-      tags: [Properties]
-      parameters:
-        - in: query
-          name: city
-          required: false
-          schema:
-            type: string
-          description: Filter by city
-
-        - in: query
-          name: bhkType
-          required: false
-          schema:
-            type: string
-            enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 4+BHK]
-          description: Filter by BHK type
-
-        - in: query
-          name: propertyType
-          required: false
-          schema:
-            type: string
-            enum: [APARTMENT, ROW_HOUSE_OR_BUNGALOW, STUDIO, PENT_HOUSE_OR_DUPLEX]
-          description: Filter by property type
-
+      tags: [Notifications]
+      summary: Get unread count
+      description: Get the number of unread notifications
+      security:
+        - bearerAuth: []
       responses:
-        '200':
-          description: List of public verified properties
+        200:
+          description: Unread notification count
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PropertyResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      unreadCount:
+                        type: integer
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark as read
+      description: Mark a single notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all as read
+      description: Mark all notifications as read for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      modifiedCount:
+                        type: integer
+
+  /notifications/{id}:
+    delete:
+      tags: [Notifications]
+      summary: Delete notification
+      description: Delete a specific notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Notification deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== UPLOAD ====================
+
+  /upload/property:
+    post:
+      tags: [Upload]
+      summary: Upload property image
+      description: Upload a property image to Cloudinary
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Property image (jpg, jpeg, png, webp)
+      responses:
+        200:
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadResponse'
+        400:
+          description: Invalid file or missing file
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==================== SYSTEM ====================
+
+  /meta/property:
+    get:
+      tags: [System]
+      summary: Get property metadata
+      description: Get available options for property creation (types, levels, etc.)
+      responses:
+        200:
+          description: Property metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyMetadata'
 
 components:
 
@@ -278,41 +740,41 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from /auth/login endpoint
 
   schemas:
 
-    # ================= AUTH =================
+    # ==================== AUTH SCHEMAS ====================
 
     RegisterRequest:
       type: object
       required: [fname, lname, dob, phone, email, password]
       properties:
-        fname: { type: string }
-        lname: { type: string }
+        fname:
+          type: string
+          minLength: 1
+          example: John
+        lname:
+          type: string
+          minLength: 1
+          example: Doe
         dob:
           type: string
           format: date
-        phone: { type: string }
+          example: "1990-01-15"
+        phone:
+          type: string
+          example: "9876543210"
         email:
           type: string
           format: email
+          example: john@example.com
         password:
           type: string
+          minLength: 6
+          example: SecurePass123!
 
-    LoginRequest:
-      type: object
-      required: [email, password]
-      properties:
-        email: { type: string }
-        password: { type: string }
-
-    LoginResponse:
-      type: object
-      properties:
-        token:
-          type: string
-
-    BrokerResponse:
+    RegisterResponse:
       type: object
       properties:
         id:
@@ -321,77 +783,161 @@ components:
           type: string
         lname:
           type: string
-        dob:
+        email:
           type: string
-          format: date
         phone:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token valid for 7 days
+
+    # ==================== BROKER SCHEMAS ====================
+
+    BrokerResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        fname:
+          type: string
+        lname:
           type: string
         email:
           type: string
+        phone:
+          type: string
+        dob:
+          type: string
+          format: date
         role:
           type: string
+          enum: [BROKER, ADMIN]
         status:
           type: string
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
-    # ================= PROPERTY REQUEST =================
+    BrokerUpdateRequest:
+      type: object
+      properties:
+        fname:
+          type: string
+        lname:
+          type: string
+        phone:
+          type: string
+
+    BrokerListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrokerResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # ==================== PROPERTY SCHEMAS ====================
 
     PropertyCreateRequest:
       type: object
-      required: [listingType, propertyType, bhkType, address]
+      required: [listingType, propertyType, bhkType, address, pricing]
       properties:
         listingType:
           type: string
           enum: [RENT, SALE]
         propertyType:
           type: string
-          enum: [APARTMENT, ROW_HOUSE_OR_BUNGALOW, STUDIO, PENT_HOUSE_OR_DUPLEX]
+          enum: [APARTMENT, VILLA, TOWNHOUSE, PLOT, LAND]
         propertyAge:
           type: string
           enum: [NEW, LESS_THAN_5_YEARS, 5_TO_10_YEARS, GREATER_THAN_10_YEARS]
         furnishing:
           type: string
-          enum: [UN_FURNISHED, SEMI_FURNISHED, FULLY_FURNISHED]
+          enum: [UNFURNISHED, SEMI_FURNISHED, FULLY_FURNISHED]
         bhkType:
           type: string
-          enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 4+BHK]
+          enum: [1RK, 1BHK, 2BHK, 3BHK, 4BHK, 5BHK]
+        pricing:
+          type: object
+          required: [price]
+          properties:
+            price:
+              type: number
+              minimum: 0
+            maintenance:
+              type: number
+              description: Only for RENT
+            deposit:
+              type: number
+              description: Only for RENT
         address:
           $ref: '#/components/schemas/AddressRequest'
         floor:
           $ref: '#/components/schemas/Floor'
         area:
           $ref: '#/components/schemas/Area'
+        amenities:
+          type: array
+          items:
+            type: string
+            enum: [Balcony, Lift, Parking, Power Backup, Gym, Garden, AC, Modular Kitchen, Gas Pipeline, Security, Pets Allowed]
         images:
           type: array
           items:
             $ref: '#/components/schemas/Image'
-        expiresAt:
+        tenantsAllowed:
+          type: array
+          items:
+            type: string
+            enum: [Family, Bachelors, Students, Company Lease]
+        availableFrom:
           type: string
-          format: date-time
+        facing:
+          type: string
+          enum: [East, West, North, South]
 
     PropertyUpdateRequest:
       type: object
       properties:
-        listingType: { type: string }
-        propertyType: { type: string }
-        propertyAge: { type: string }
-        furnishing: { type: string }
-        bhkType: { type: string }
+        listingType:
+          type: string
+        propertyType:
+          type: string
+        bhkType:
+          type: string
+        pricing:
+          type: object
         address:
           $ref: '#/components/schemas/AddressRequest'
-        floor:
-          $ref: '#/components/schemas/Floor'
-        area:
-          $ref: '#/components/schemas/Area'
+        amenities:
+          type: array
+          items:
+            type: string
         images:
           type: array
           items:
             $ref: '#/components/schemas/Image'
-        expiresAt:
-          type: string
-          format: date-time
 
     PropertyRenewRequest:
       type: object
@@ -400,43 +946,59 @@ components:
         expiresAt:
           type: string
           format: date-time
-
-    # ================= PROPERTY RESPONSE (DTO) =================
+          example: "2026-04-01T00:00:00Z"
 
     PropertyResponse:
       type: object
       properties:
-        id:
+        _id:
+          type: string
+        brokerId:
           type: string
         listingType:
           type: string
         status:
           type: string
-          example: ACTIVE
-        brokerName:
-          type: string
-          example: Rajesh Patel
-        postedAt:
-          type: string
-          format: date-time
+          enum: [DRAFTED, UNVERIFIED, VERIFIED, EXPIRED]
         propertyType:
-          $ref: '#/components/schemas/EnumWithLabel'
-        propertyAge:
-          $ref: '#/components/schemas/EnumWithLabel'
-        furnishing:
-          $ref: '#/components/schemas/EnumWithLabel'
+          type: string
         bhkType:
           type: string
+        pricing:
+          type: object
+          properties:
+            price:
+              type: number
+            maintenance:
+              type: number
+            deposit:
+              type: number
         address:
           $ref: '#/components/schemas/AddressResponse'
         floor:
           $ref: '#/components/schemas/Floor'
         area:
           $ref: '#/components/schemas/Area'
+        amenities:
+          type: array
+          items:
+            type: string
         images:
           type: array
           items:
             $ref: '#/components/schemas/Image'
+        tenantsAllowed:
+          type: array
+          items:
+            type: string
+        availableFrom:
+          type: string
+        facing:
+          type: string
+        isFavorited:
+          type: boolean
+        isDeleted:
+          type: boolean
         expiresAt:
           type: string
           format: date-time
@@ -446,44 +1008,72 @@ components:
         updatedAt:
           type: string
           format: date-time
-
-    EnumWithLabel:
-      type: object
-      properties:
-        value:
-          type: string
-        label:
-          type: string
+        broker:
+          type: object
+          properties:
+            _id:
+              type: string
+            fname:
+              type: string
+            lname:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
 
     AddressRequest:
       type: object
+      required: [line1, locality, city, state, pincode]
       properties:
-        line1: { type: string }
-        line2: { type: string }
-        landmark: { type: string }
-        locality: { type: string }
-        city: { type: string }
-        state: { type: string }
-        country: { type: string }
-        pincode: { type: string }
+        line1:
+          type: string
+        line2:
+          type: string
+        landmark:
+          type: string
+        locality:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+          default: India
+        pincode:
+          type: string
 
     AddressResponse:
       type: object
       properties:
-        line1: { type: string }
-        locality: { type: string }
-        city: { type: string }
-        state: { type: string }
-        pincode: { type: string }
+        line1:
+          type: string
+        line2:
+          type: string
+        landmark:
+          type: string
+        locality:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        pincode:
+          type: string
 
     Floor:
       type: object
       properties:
         totalFloors:
           type: integer
+        floorNumber:
+          type: integer
         level:
           type: string
-          enum: [LOWER, MIDDLE, HIGHER]
+          enum: [GROUND, LOW, MID, HIGH]
 
     Area:
       type: object
@@ -504,6 +1094,83 @@ components:
         isPrimary:
           type: boolean
 
+    # ==================== NOTIFICATION SCHEMAS ====================
+
+    NotificationResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        brokerId:
+          type: string
+        type:
+          type: string
+        message:
+          type: string
+        unread:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    # ==================== UPLOAD SCHEMAS ====================
+
+    ImageUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+            publicId:
+              type: string
+            width:
+              type: integer
+            height:
+              type: integer
+            size:
+              type: integer
+
+    # ==================== SYSTEM SCHEMAS ====================
+
+    PropertyMetadata:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            propertyTypes:
+              type: array
+              items:
+                type: string
+            floorLevels:
+              type: array
+              items:
+                type: string
+            furnishing:
+              type: array
+              items:
+                type: string
+
+    # ==================== COMMON SCHEMAS ====================
+
     SuccessResponse:
       type: object
       properties:
@@ -522,21 +1189,50 @@ components:
       properties:
         success:
           type: boolean
+          example: false
         message:
           type: string
         errors:
           type: object
+          additionalProperties: true
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        skip:
+          type: integer
+        hasMore:
+          type: boolean
 
   responses:
-    UnauthorizedError:
-      description: Unauthorized access
+
+    BadRequest:
+      description: Bad Request - Invalid input or validation error
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
 
-    ConflictError:
-      description: Resource conflict
+    Unauthorized:
+      description: Unauthorized - Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Not Found - Resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict - Resource already exists
       content:
         application/json:
           schema:
